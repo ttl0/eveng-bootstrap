@@ -1,0 +1,4 @@
+NXOS1    ansible_host=10.0.1.62
+NXOS2    ansible_host=10.0.1.63
+NXOS3    ansible_host=10.0.1.64
+NXOS4    ansible_host=10.0.1.65
