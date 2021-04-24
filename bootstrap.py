@@ -74,7 +74,7 @@ def nxos_provision(host, port, tbr, commands, hostname):
     print("{} - Stage 3 - Device configured.".format(hostname))
 
 
-def nxos_command(host, port, tbr, command):
+def send_command(host, port, tbr, command):
     '''
     Takes a command as an argument runs the command and 
     returns the output of that command.
@@ -95,7 +95,11 @@ def extract_ip(text):
     This function takes a string as an input and returns an IP address
     found in that string
     '''
-    return re.search(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', text).group() 
+    try:
+        return re.search(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', text).group() 
+    except:
+        return "" 
+
 
 def mt_print(msg):
     with PRINT_LOCK:
@@ -112,6 +116,9 @@ def run_mt(mt_function, q, **kwargs):
     q.join()    
 
 if __name__ == "__main__":
+    # Time the operation by starting a timer
+    start_time = time.time()
+
     # Provide lab name and credentials to log in EVE-NG
     # Lab name as defined in the URL when created
     lab = 'Provision.unl'
@@ -169,26 +176,46 @@ if __name__ == "__main__":
         # Sleep 10 seconds to make sure we get a DHCP address
     thread.join()
 
-    print("Waiting for DHCP..")
-    time.sleep(10)
     for hostname, port in devices.items():
         command = 'sh ip int b vrf management'
-        output = nxos_command(eveng, port, tbr, command)
-        try:
+        
+        # Try to get DHCP address for 60seconds
+        timeout = 60
+        tries = 0
+        dhcpflag = False 
+        while not dhcpflag: 
+            output = send_command(eveng, port, tbr, command)
+            print("{} - Waiting for DHCP..".format(hostname))
             ip = extract_ip(output)
-            devices[hostname] = ip
-            print("{} completed.".format(hostname))
-        except:
-            print("ERROR! {} could not get a DHCP address".format(hostname))
+            # We check if we are able to get an IP address
+            if ip != "":
+                dhcpflag = True
 
-        # We rewrite our devices dictionary to store the IP address of
-        # the device as Value instead of the port number as follows:
-        # Key: Name of the device as defined in EVE-NG
-        # Value: IP address of the device 
+                # We rewrite our devices dictionary to store the IP address of
+                # the device as Value instead of the port number as follows:
+                # Key: Name of the device as defined in EVE-NG
+                # Value: IP address of the device 
+                devices[hostname] = ip
+                print("{} completed.".format(hostname))
 
-    # Creates a local file called "hosts" to use as an ansible inventory file
-    with open("hosts", "a+") as f:
-        for hostname, ip in devices.items():
-            f.write("{}    ansible_host={}\n".format(hostname, ip))
+                # Creates a local file called "hosts" to use as an ansible inventory file
+                with open("hosts", "w") as f:
+                    for hostname, ip in devices.items():
+                        f.write("{}    ansible_host={}\n".format(hostname, ip))
+
+            # We sleep 1 second and increment the timer until we can get an
+            # address
+            elif tries < timeout:
+                print("{} - Waiting for DHCP..".format(hostname))
+                tries += 5 
+                time.sleep(5)
+            # If we reach the timeout, we give up and continue to the next host
+            elif tries == timeout:
+                print("ERROR! {} could not get a DHCP address".format(hostname))
+                dhcpflag = True
+
+    print("Completed in {} seconds".format(time.time() - start_time))
+
+
 
 
