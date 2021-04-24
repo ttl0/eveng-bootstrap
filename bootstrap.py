@@ -162,6 +162,7 @@ if __name__ == "__main__":
 
     # Make sure all devices are booted ON or this loop will fail on devices
     # powered off
+    threads = []
     for hostname, port in devices.items():
         commands = [
                'conf t', 'int mgmt0', 'vrf member management',
@@ -169,14 +170,17 @@ if __name__ == "__main__":
                'hostname ' + hostname
                ]
         print("Starting thread for {} on port {}".format(hostname, port))
+        
+
 
         thread = Thread(target = nxos_provision, args = (eveng, port, tbr,
             commands, hostname))
+        threads.append(thread)
         thread.start()
-        #nxos_provision(eveng, port, tbr, commands, hostname)
 
-        # Sleep 10 seconds to make sure we get a DHCP address
-    thread.join()
+    # Wait for all threads to finish
+    for x in threads:
+        x.join()
 
     for hostname, port in devices.items():
         command = 'sh ip int b vrf management'
