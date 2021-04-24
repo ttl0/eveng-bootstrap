@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+
+
 import time
 import re
 from netmiko import ConnectHandler
@@ -183,9 +185,9 @@ if __name__ == "__main__":
         timeout = 60
         tries = 0
         dhcpflag = False 
+        print("{} - Checking for DHCP address...".format(hostname))
         while not dhcpflag: 
             output = send_command(eveng, port, tbr, command)
-            print("{} - Waiting for DHCP..".format(hostname))
             ip = extract_ip(output)
             # We check if we are able to get an IP address
             if ip != "":
@@ -206,7 +208,7 @@ if __name__ == "__main__":
             # We sleep 1 second and increment the timer until we can get an
             # address
             elif tries < timeout:
-                print("{} - Waiting for DHCP..".format(hostname))
+                print("{} - Waiting for DHCP, will check again in 5 seconds...".format(hostname))
                 tries += 5 
                 time.sleep(5)
             # If we reach the timeout, we give up and continue to the next host
