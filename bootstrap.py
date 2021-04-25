@@ -40,7 +40,6 @@ def nxos_provision(host, port, tbr, commands, hostname):
         elif 'switch#' in output or 'config)#' in output or 'login:' in output:
             loading_stage1 = False
         time.sleep(tbr)
-        net_connect.write_channel('\r')
 
     print("{} - Stage 1 - Device booted and SOAP skipped".format(hostname))
 
@@ -72,8 +71,7 @@ def nxos_provision(host, port, tbr, commands, hostname):
             loading_stage3 = False
         elif 'config)#' in output:
             loading_stage3 = False
-        elif hostname in output:
-            loading_stage3 = False
+        time.sleep(tbr)
     print("{} - Stage 3 - Device configured.".format(hostname))
 
 
