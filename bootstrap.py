@@ -37,7 +37,7 @@ def nxos_provision(host, port, tbr, commands, hostname):
             loading_stage1 = False
         elif 'loader >' in output:
             net_connect.write_channel('boot nxos.9.2.2.bin\r')
-        elif 'switch#' in output or 'config)#' in output or 'login:' in output:
+        elif 'switch#' in output or 'config)#' in output or 'login:' in output or hostname in output:
             loading_stage1 = False
         time.sleep(tbr)
         net_connect.write_channel('\r')
@@ -72,7 +72,8 @@ def nxos_provision(host, port, tbr, commands, hostname):
             loading_stage3 = False
         elif 'config)#' in output:
             loading_stage3 = False
-        time.sleep(tbr)
+        elif hostname in output:
+            loading_stage3 = False
     print("{} - Stage 3 - Device configured.".format(hostname))
 
 
